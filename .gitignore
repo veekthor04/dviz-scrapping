@@ -127,3 +127,12 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# vs code
+.vscode/
+
+# chrome driver exe
+chromedriver/*
+
+# result xlsx
+/search_results.xlsx

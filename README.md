@@ -28,4 +28,5 @@ A web scraping script using selenium
 
 ### Alternative usage
 - run script
+
 `$ python scrap_it`

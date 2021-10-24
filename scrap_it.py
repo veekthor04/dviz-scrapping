@@ -44,7 +44,7 @@ class CredSurfer():
 
     # preferences
     _options = Options()
-    _options.headless = True  # initiates a headless browser
+    # _options.headless = True  # initiates a headless browser
 
     # disables image to load pages faster since image is not needed
     _options.add_experimental_option(
@@ -241,35 +241,53 @@ class CredSurfer():
             except selenium.common.exceptions.NoSuchElementException:
                 price = 'Sold'
 
-            # extracts the vehicle summary
-            summary = '['
+            # extracts all the vehicle summary
             table = self.browser.find_elements(By.ID, 'summary-table')
-            table_row = table[1].find_elements(By.XPATH, './/tbody/tr')
+            table_rows = table[1].find_elements(By.XPATH, './/tbody/tr')
 
-            for row in table_row:
+            summary_rows = []  # to store vehicle summary
 
+            for row in table_rows:
+
+                # skips title
                 if row.text == 'Summary':
                     continue
-                summary += row.text.strip() + ', '
-            summary += ']'
+
+                # extracts and formats the head and deatail
+                row_head = row.find_element(By.XPATH, './/th').text
+                row_detail = row.find_element(By.XPATH, './/td').text
+                current_row = "'{}':'{}'".format(
+                    row_head.strip().replace(':', ''),  # removes :
+                    ''.join(row_detail.splitlines())  # reformats
+                )
+                summary_rows.append(current_row)
+
+            summary = "[{}]".format(','.join(summary_rows))
 
             # extracts the vehicle options
-            vehicle_options = '['
             table = self.browser.find_elements(By.ID, 'options-table')
 
+            options_rows = []  # to store vehicle options
+
             if table:
-                table_row = table[0].find_elements(By.XPATH, './/tbody/tr')
+                table_rows = table[0].find_elements(By.XPATH, './/tbody/tr')
                 start = False
 
-                for row in table_row:
+                for row in table_rows:
 
+                    # starts only when in options section
                     if row.text == 'Options':
                         start = True
                         continue
 
                     if start:
-                        vehicle_options += row.text.strip() + ', '
-            vehicle_options += ']'
+                        # extracts and format row details
+                        row_detail = row.find_element(By.XPATH, './/td').text
+                        current_row = "'{}'".format(
+                            ''.join(row_detail.splitlines())  # reformats
+                        )
+                        options_rows.append(current_row)
+            vehicle_options = "[{}]".format(','.join(options_rows))
 
             # creates car object
             current_car = Car(
@@ -358,11 +376,11 @@ class CredSurfer():
 
 
 def main():
-    a1 = CredSurfer()
+    surf = CredSurfer()
     radius = input("Enter your radius: ")
     zip = int(input("Enter your zip code: "))
     limit = int(input("Enter your result limit: "))
-    a1.filter_by_location(radius=radius, zip=zip, limit=limit)
+    surf.filter_by_location(radius=radius, zip=zip, limit=limit)
 
 
 if __name__ == "__main__":

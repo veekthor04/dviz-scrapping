@@ -44,7 +44,7 @@ class CredSurfer():
 
     # preferences
     _options = Options()
-    # _options.headless = True  # initiates a headless browser
+    _options.headless = True  # initiates a headless browser
 
     # disables image to load pages faster since image is not needed
     _options.add_experimental_option(
@@ -56,37 +56,26 @@ class CredSurfer():
 
     def __init__(self) -> None:
 
-        # initiates a headless browser on tred
-        # options = Options()
-        # # options.headless = True
-
-        # # disables image to load pages faster since image is not needed
-        # prefs = {"profile.managed_default_content_settings.images": 2}
-        # options.add_experimental_option("prefs", prefs)
-
-        # service = Service(DRIVER_PATH)  # path to chrome webdriver
-        # self.browser = Chrome(options=options, service=service)
-
-        # self.browser.get(TRED_URL)  # opens base url
-        # self._confirm_page_load()  # confirms page load
-
-        # confirms set up is fine
+        # confirms browser set up is fine
         self._lunch_browser()
         self._close_browser()
+        print('browser set up is fine')
 
         pass
 
-    def _lunch_browser(self) -> None:
+    def _lunch_browser(self) -> bool:
         """Lunches browser and opens tred url
         """
+        try:
+            # lunch chrome as browser
+            self.browser = Chrome(options=self._options, service=self._service)
 
-        # lunch chrome as browser
-        self.browser = Chrome(options=self._options, service=self._service)
+            self.browser.get(TRED_URL)  # opens base url
+            self._confirm_page_load()  # confirms page load
+        except selenium.common.exceptions.WebDriverException:
+            raise ConnectionError('Browser connectivity issue')
 
-        self.browser.get(TRED_URL)  # opens base url
-        self._confirm_page_load()  # confirms page load
-
-        pass
+        return True
 
     def _close_browser(self) -> None:
         """Closes current browser section
@@ -100,18 +89,22 @@ class CredSurfer():
         self,
         radius: str = None,
         zip: int = None,
-        limit: int = 9999999999
+        limit: int = 999999999
     ) -> List[Car]:
-        """Filters cars by radius and zip code
+        """Filters cars by radius and zip code, writes result to
+        search_results.xlsx and returns list of cars
 
         Args:
-            radius (str, optional): radius. Defaults to None.
+            radius (str, optional): radius format(100 mi.). Defaults to None.
             zip (int, optional): zip code. Defaults to None.
-            limit (int, optional): result limit. Defaults to 9999999999.
+            limit (int, optional): result limit. Defaults to 999999999.
 
         Returns:
             List[Car]: List of car object
         """
+        # sets maximum limit if None
+        limit = 999999999 if limit is None else limit
+        self._validate_limit
 
         self._lunch_browser()  # lunches browser for current session
 
@@ -132,7 +125,7 @@ class CredSurfer():
 
             # gets list of allowed selections for the radius select tag
             avail_radius = (radius_select.text).split('\n')
-
+            print(avail_radius)
             # validates the inputs
             self._validate_radius(radius, avail_radius)
             self._validate_zip(zip)
@@ -357,6 +350,21 @@ class CredSurfer():
             raise ValueError('Zip code must be of type int')
         pass
 
+    def _validate_limit(self, limit: int) -> None:
+        """Validates the limit input
+
+        Args:
+            limit (int): limit input
+
+        Raises:
+            ValueError: limit must be of type int
+        """
+
+        if type(limit) is not int:
+            self._close_browser()
+            raise ValueError('limit code must be of type int')
+        pass
+
     def _confirm_page_load(self) -> None:
         """checks if page loaded
         """
@@ -376,10 +384,24 @@ class CredSurfer():
 
 
 def main():
-    surf = CredSurfer()
+    surf = CredSurfer()  # initiate CredSurfer
+
+    # gets radius input
     radius = input("Enter your radius: ")
-    zip = int(input("Enter your zip code: "))
-    limit = int(input("Enter your result limit: "))
+
+    # gets zip code input
+    try:
+        zip = int(input("Enter your zip code: "))
+    except ValueError:
+        zip = None
+
+    # gets limit input
+    try:
+        limit = int(input("Enter your result limit: "))
+    except ValueError:
+        limit = None
+
+    # filter cars by radius and zip
     surf.filter_by_location(radius=radius, zip=zip, limit=limit)
 
 
